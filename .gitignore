@@ -1,0 +1,75 @@
+# .gitignore for a Visual Studio / .NET 10 Worker Service project
+# See https://github.com/github/gitignore for templates
+
+## Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Build output
+[Bb]in/
+[Oo]bj/
+build/
+out/
+artifacts/
+
+## Rider
+.idea/
+*.sln.iml
+*.DotSettings.user
+
+## Visual Studio Code
+.vscode/
+!.vscode/extensions.json
+
+## NuGet
+packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+.nuget/
+
+## dotnet
+*.dll
+*.exe
+*.app
+*.pdb
+*.mdb
+*.runtimeconfig.dev.json
+*.deps.json
+publish/
+.dotnetwatch/
+
+## Test and coverage results
+TestResults/
+*.trx
+*.coverage
+coverage/
+coverage*.xml
+
+## Logs
+*.log
+
+## User secrets and local config
+local.settings.json
+secrets.json
+secrets.*
+.env
+.env.*
+
+## Database files
+*.mdf
+*.ldf
+
+## OS generated files
+.DS_Store
+Thumbs.db
+
+## Other
+node_modules/
+.vagrant/
+
+## JetBrains Rider caches
+/.idea/
