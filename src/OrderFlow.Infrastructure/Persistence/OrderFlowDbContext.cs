@@ -1,12 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OrderFlow.Domain.Entities;
+using OrderFlow.Application.Abstractions.Persistence;
 
 namespace OrderFlow.Infrastructure.Persistence;
 
 /// <summary>
 /// Contexto do banco de dados da aplicação.
 /// </summary>
-public class OrderFlowDbContext : DbContext
+public class OrderFlowDbContext : DbContext, IUnitOfWork
 {
     /// <summary>
     /// Cria o contexto do banco de dados.
