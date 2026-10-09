@@ -18,7 +18,7 @@ public class OrderTests
         var order = new Order("João");
         
         //Assert
-        Assert.NotEqual(Guid.Empty, order.Id);
+        Assert.Equal(0, order.Id);
         Assert.Equal("João", order.Customer);
         Assert.Equal(OrderStatus.Pending, order.Status);
         Assert.Empty(order.Items);

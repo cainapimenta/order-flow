@@ -20,17 +20,21 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Id)
-            .ValueGeneratedNever();
+            .HasColumnName("id")
+            .ValueGeneratedOnAdd();
 
         builder.Property(x => x.Customer)
+            .HasColumnName("customer")
             .IsRequired()
             .HasMaxLength(150);
 
         builder.Property(x => x.Status)
+            .HasColumnName("status")
             .IsRequired()
             .HasConversion<int>();
 
         builder.Property(x => x.CreatedAt)
+            .HasColumnName("created_at")
             .IsRequired();
 
         builder.Ignore(x => x.Amount);

@@ -12,7 +12,7 @@ public class Order
     /// <summary>
     /// ID do pedido.
     /// </summary>
-    public Guid Id { get; private set; }
+    public int Id { get; private set; }
     /// <summary>
     /// Nome do cliente.
     /// </summary>
@@ -49,7 +49,6 @@ public class Order
         if(string.IsNullOrWhiteSpace(customer))
             throw new ArgumentException("Customer is required.", nameof(customer));
 
-        Id = Guid.NewGuid();
         Customer = customer.Trim();
         Status = OrderStatus.Pending;
         CreatedAt = DateTime.UtcNow;
@@ -64,7 +63,7 @@ public class Order
         if(Status != OrderStatus.Pending)
             throw new InvalidOperationException("Items cannot be added after processing starts.");
 
-        var item = new OrderItem(Id, product, quantity, unitPrice);
+        var item = new OrderItem(product, quantity, unitPrice);
 
         _items.Add(item);
     }

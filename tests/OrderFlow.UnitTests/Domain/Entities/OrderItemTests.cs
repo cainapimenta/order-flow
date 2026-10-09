@@ -8,21 +8,23 @@ public class OrderItemTests
     /// Verifica se o item é criado com os dados corretos.
     /// </summary>
     [Fact]
-    public void Constructor_ShouldCreateItem_WhithValidData()
+    public void Constructor_ShouldCreateItem_WithValidData()
     {
 
-        //Arrange
-        var orderId = Guid.NewGuid();
+        // Arrange
+        var product = "Notebook";
+        var quantity = 2;
+        var unitPrice = 3500m;
 
-        //Act
-        var item = new OrderItem(orderId, "Teclado RedDragon", 2, 149.99m);
+        // Act
+        var item = new OrderItem(product, quantity, unitPrice);
 
-        //Assert
-        Assert.NotEqual(Guid.Empty, item.Id);
-        Assert.Equal(orderId, item.OrderId);
-        Assert.Equal("Teclado RedDragon", item.Product);
-        Assert.Equal(2, item.Quantity);
-        Assert.Equal(149.99m, item.UnitPrice);
+        // Assert
+        Assert.Equal(0, item.Id);
+        Assert.Equal(0, item.OrderId);
+        Assert.Equal(product, item.Product);
+        Assert.Equal(quantity, item.Quantity);
+        Assert.Equal(unitPrice, item.UnitPrice);
     }
 
     /// <summary>
@@ -34,11 +36,8 @@ public class OrderItemTests
     [InlineData(null)]
     public void Constructor_ShouldThrow_WhenProductIsInvalid(string? product)
     {
-        //Arrange
-        var orderId = Guid.NewGuid();
-
-        //Act
-        var action = () => new OrderItem(orderId, product, 2, 149);
+        //Arrange & Act
+        var action = () => new OrderItem(product, 2, 149);
 
         //Assert
         Assert.Throws<ArgumentException>(action);
@@ -53,11 +52,8 @@ public class OrderItemTests
     [InlineData(-10)]
     public void Constructor_ShouldThrow_WhenQuantityIsInvalid(int quantity)
     {
-        //Arrange
-        var orderId = Guid.NewGuid();
-
-        //Act
-        var action = () => new OrderItem(orderId, "Teclado RedDragon", quantity, 149);
+        //Arrange & Act
+        var action = () => new OrderItem("Teclado RedDragon", quantity, 149);
 
         //Assert
         Assert.Throws<ArgumentException>(action);
@@ -72,11 +68,8 @@ public class OrderItemTests
     [InlineData(-100)]
     public void Constructor_ShouldThrow_WhenUnitPriceIsInvalid(decimal unitPrice)
     {
-        //Arrange
-        var orderId = Guid.NewGuid();
-
-        //Act
-        var action = () => new OrderItem(orderId, "Teclado RedDragon", 2, unitPrice);
+        //Arrange & Act
+        var action = () => new OrderItem("Teclado RedDragon", 2, unitPrice);
 
         //Assert
         Assert.Throws<ArgumentException>(action);
@@ -89,8 +82,7 @@ public class OrderItemTests
     public void SubTotal_ShouldCalculateCorrectly()
     {
         //Arrange
-        var orderId = Guid.NewGuid();
-        var item = new OrderItem(orderId, "Teclado RedDragon", 2, 149.99m);
+        var item = new OrderItem("Teclado RedDragon", 2, 149.99m);
 
         //Act
         var subTotal = item.SubTotal;
@@ -105,11 +97,8 @@ public class OrderItemTests
     [Fact]
     public void Constructor_ShouldTrimProductName()
     {
-        //Arrange
-        var orderId = Guid.NewGuid();
-
-        //Act
-        var item = new OrderItem(orderId, "  Teclado RedDragon  ", 2, 149.99m);
+        //Arrange & Act
+        var item = new OrderItem("  Teclado RedDragon  ", 2, 149.99m);
 
         //Assert
         Assert.Equal("Teclado RedDragon", item.Product);

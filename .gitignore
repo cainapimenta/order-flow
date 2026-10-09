@@ -57,7 +57,6 @@ local.settings.json
 secrets.json
 secrets.*
 .env
-.env.*
 
 ## Database files
 *.mdf

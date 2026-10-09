@@ -20,19 +20,24 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Id)
-            .ValueGeneratedNever();
+            .HasColumnName("id")
+            .ValueGeneratedOnAdd();
 
         builder.Property(x => x.OrderId)
+            .HasColumnName("order_id")
             .IsRequired();
 
         builder.Property(x => x.Product)
+            .HasColumnName("product")
             .IsRequired()
             .HasMaxLength(200);
 
         builder.Property(x => x.Quantity)
+            .HasColumnName("quantity")
             .IsRequired();
 
         builder.Property(x => x.UnitPrice)
+            .HasColumnName("unit_price")
             .IsRequired()
             .HasPrecision(18, 2);
 

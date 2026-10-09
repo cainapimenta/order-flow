@@ -8,11 +8,11 @@ public class OrderItem
     /// <summary>
     /// ID do item.
     /// </summary>
-    public Guid Id { get; private set; }
+    public int Id { get; private set; }
     /// <summary>
     /// ID do pedido ao qual o item pertence.
     /// </summary>
-    public Guid OrderId { get; private set; }
+    public int OrderId { get; private set; }
     /// <summary>
     /// Nome do produto.
     /// </summary>
@@ -42,7 +42,7 @@ public class OrderItem
     /// <param name="product">Nome do produto.</param>
     /// <param name="quantity">Quantidade do produto.</param>
     /// <param name="unitPrice">Preço unitário do produto.</param>
-    public OrderItem(Guid orderId, string product, int quantity, decimal unitPrice)
+    public OrderItem(string product, int quantity, decimal unitPrice)
     {
         if(string.IsNullOrWhiteSpace(product))
             throw new ArgumentException("Product is required..", nameof(product));
@@ -54,8 +54,6 @@ public class OrderItem
             throw new ArgumentException("Unit price must be greater than zero.", nameof(unitPrice));
 
 
-        Id = Guid.NewGuid();
-        OrderId = orderId;
         Product = product.Trim();
         Quantity = quantity;
         UnitPrice = unitPrice;
