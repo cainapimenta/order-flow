@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Win32;
 using OrderFlow.Application.Abstractions.Persistence;
 using OrderFlow.Application.Orders;
 using OrderFlow.Infrastructure.Persistence;
 using OrderFlow.Infrastructure.Persistence.Repositories;
+using OrderFlow.Infrastructure.Persistence.Outbox;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,11 +17,14 @@ builder.Services.AddDbContext<OrderFlowDbContext>(options =>
 // Registra o repositório de pedidos.
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
-// Registra o serviço responsável pelos pedidos.
-builder.Services.AddScoped<OrderService>();
+// Registra o serviço responsável pela Outbox.
+builder.Services.AddScoped<IOutboxWriter, OutboxWriter>();
 
 // Utiliza o mesmo DbContext para controlar a gravação.
 builder.Services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<OrderFlowDbContext>());
+
+// Registra o serviço responsável pelos pedidos.
+builder.Services.AddScoped<OrderService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -32,6 +35,13 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    using var scope = app.Services.CreateScope();
+
+    var dbContext = scope.ServiceProvider
+        .GetRequiredService<OrderFlowDbContext>();
+
+    await dbContext.Database.MigrateAsync();
+
     app.MapOpenApi();
 }
 

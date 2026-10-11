@@ -1,5 +1,6 @@
 ﻿using OrderFlow.Application.Abstractions.Persistence;
 using OrderFlow.Domain.Entities;
+using OrderFlow.Contracts.Events;
 
 namespace OrderFlow.Application.Orders;
 
@@ -10,26 +11,31 @@ public class OrderService
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IOutboxWriter _outboxWriter;
 
     /// <summary>
     /// Cria o serviço com as dependências de persistência.
     /// </summary>
     /// <param name="orderRepository">Repositório de pedidos.</param>
     /// <param name="unitOfWork">Responsável por salvar as alterações.</param>
-    public OrderService(IOrderRepository orderRepository, IUnitOfWork unitOfWork)
+    /// <param name="outboxWriter">Responsável por registrar eventos na Outbox.</param>
+    public OrderService(IOrderRepository orderRepository, IUnitOfWork unitOfWork, IOutboxWriter outboxWriter)
     {
         _orderRepository = orderRepository;
         _unitOfWork = unitOfWork;
+        _outboxWriter = outboxWriter;
     }
 
     /// <summary>
-    /// Cria e salva um novo pedido.
+    /// Cria um pedido e registra o evento na Outbox.
     /// </summary>
     /// <param name="command">Dados do pedido.</param>
     /// <param name="cancellationToken">Token para cancelar a operação.</param>
     /// <returns>Pedido criado.</returns>
     public async Task<Order> CreateAsync(CreateOrderCommand command, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(command);
+
         if (command.Items is null || command.Items.Count == 0)
             throw new ArgumentException(
                 "An order must contain at least one item.");
@@ -44,9 +50,20 @@ public class OrderService
                 item.UnitPrice);
         }
 
-        _orderRepository.Add(order);
+        await _unitOfWork.ExecuteInTransactionAsync(async ct =>
+        {
+            _orderRepository.Add(order);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+            //Salva o pedido para obter o ID gerado
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            //Registra o evento usand oo ID do pedido
+            var orderCreatedEvent = new OrderCreatedEvent(order.Id);
+            _outboxWriter.Add(orderCreatedEvent);
+
+            //Salva o evento na mesma transação
+            await _unitOfWork.SaveChangesAsync(ct);
+        }, cancellationToken);
 
         return order;
     }
