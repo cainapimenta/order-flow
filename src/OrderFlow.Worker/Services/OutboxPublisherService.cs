@@ -41,14 +41,30 @@ public sealed class OutboxPublisherService : BackgroundService
         {
             try
             {
-                await ..
+                await PublishPendingMessagesAsync(stoppingToken);
             }
-            catch (Exception)
+            catch (OperationCanceledException)
+                when (stoppingToken.IsCancellationRequested)
             {
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while processing the Outbox.");
+            }
 
-                throw;
+            try
+            {
+                await Task.Delay(PollingInterval, stoppingToken);
+            }
+            catch (OperationCanceledException)
+                when (stoppingToken.IsCancellationRequested)
+            {
+                break;
             }
         }
+
+        _logger.LogInformation("Outbox Publisher stopped.");
     }
 
     /// <summary>
