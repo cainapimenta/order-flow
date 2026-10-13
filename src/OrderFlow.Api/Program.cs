@@ -43,6 +43,17 @@ builder.Services.AddHealthChecks()
     .AddCheck<PostgreSqlHealthCheck>("postgres", tags: ["ready"], timeout: TimeSpan.FromSeconds(5))
     .AddCheck<RabbitMqHealthCheck>("rabbitmq", tags: ["ready"], timeout: TimeSpan.FromSeconds(5));
 
+// Permite requisições do frontend React em desenvolvimento.
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("ReactDevelopment", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -63,6 +74,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("ReactDevelopment");
 
 app.UseAuthorization();
 
