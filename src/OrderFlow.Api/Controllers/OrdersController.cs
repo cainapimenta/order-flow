@@ -48,6 +48,15 @@ public class OrdersController : ControllerBase
                     UnitPrice = item.UnitPrice,
                     SubTotal = item.SubTotal
                 })
+                .ToList(),
+            StatusHistory = order.StatusHistory
+                .OrderBy(history => history.ChangedAt)
+                .ThenBy(history => history.Id)
+                .Select(history => new OrderStatusHistoryResponse
+                {
+                    Status = history.Status.ToString(),
+                    ChangedAt = history.ChangedAt
+                })
                 .ToList()
         };
     }
@@ -132,4 +141,4 @@ public class OrdersController : ControllerBase
             });
         }
     }
-} 
+}

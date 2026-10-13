@@ -165,5 +165,63 @@ public class OrderTests
         var item = Assert.Single(order.Items);
         Assert.Equal(order.Id, item.OrderId);
     }
+
+    /// <summary>
+    /// Verifica se um pedido novo registra o status pendente no histórico.
+    /// </summary>
+    [Fact]
+    public void Constructor_ShouldRegisterPendingStatusInHistory()
+    {
+        // Arrange & Act
+        var order = new Order("João");
+
+        // Assert
+        var history = Assert.Single(order.StatusHistory);
+
+        Assert.Equal(OrderStatus.Pending, history.Status);
+        Assert.Equal(order.CreatedAt, history.ChangedAt);
+    }
+
+    /// <summary>
+    /// Verifica se todas as mudanças de status são registradas.
+    /// </summary>
+    [Fact]
+    public void StatusHistory_ShouldRegisterAllStatusChanges()
+    {
+        // Arrange
+        var order = new Order("João");
+        order.AddItem("Teclado", 1, 150m);
+
+        // Act
+        order.MarkAsProcessing();
+        order.MarkAsFinished();
+
+        // Assert
+        Assert.Collection(
+            order.StatusHistory,
+            history => Assert.Equal(OrderStatus.Pending, history.Status),
+            history => Assert.Equal(OrderStatus.Processing, history.Status),
+            history => Assert.Equal(OrderStatus.Finished, history.Status));
+    }
+
+    /// <summary>
+    /// Não registra mudanças de status que foram rejeitadas.
+    /// </summary>
+    [Fact]
+    public void StatusHistory_ShouldNotChange_WhenTransitionIsInvalid()
+    {
+        // Arrange
+        var order = new Order("João");
+        order.AddItem("Mouse", 1, 80m);
+
+        // Act
+        var action = () => order.MarkAsFinished();
+
+        // Assert
+        Assert.Throws<InvalidOperationException>(action);
+
+        Assert.Single(order.StatusHistory);
+        Assert.Equal(OrderStatus.Pending, order.Status);
+    }
 }
 

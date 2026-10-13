@@ -17,6 +17,7 @@ public sealed class OrderCreatedConsumerService : BackgroundService
     private readonly RabbitMqSettings _settings;
     private readonly ILogger<OrderCreatedConsumerService> _logger;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private const int MaxRetries = 3;
 
     /// <summary>
     /// Cria o serviço responsável por consumir os pedidos.
@@ -85,7 +86,9 @@ public sealed class OrderCreatedConsumerService : BackgroundService
 
         await using var connection = await factory.CreateConnectionAsync(cancellationToken);
 
-        await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+        var channelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true);
+
+        await using var channel = await connection.CreateChannelAsync(channelOptions, cancellationToken: cancellationToken);
 
         await channel.QueueDeclareAsync(
             queue: _settings.QueueName,
@@ -193,19 +196,85 @@ public sealed class OrderCreatedConsumerService : BackgroundService
 
             try
             {
-                // Evita tentativas imediatas em sequência.
-                await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
-
-                if (channel.IsOpen)
-                {
-                    await channel.BasicNackAsync(delivery.DeliveryTag, multiple: false, requeue: true, cancellationToken: cancellationToken);
-                }
+                await HandleRetryAsync(
+                    channel,
+                    delivery,
+                    cancellationToken);
             }
             catch (OperationCanceledException)
                 when (cancellationToken.IsCancellationRequested)
             {
-                // O RabbitMQ poderá reentregar a mensagem.
+                // A mensagem sem ACK poderá ser reentregue.
+            }
+            catch (Exception retryException)
+            {
+                _logger.LogError(retryException, "Failed to retry message {MessageId}.", delivery.BasicProperties.MessageId);
+
+                // Se a republicação falhou, mantemos a original
+                // disponível para uma nova entrega.
+                if (channel.IsOpen)
+                {
+                    await channel.BasicNackAsync(
+                        delivery.DeliveryTag,
+                        multiple: false,
+                        requeue: true,
+                        cancellationToken: cancellationToken);
+                }
             }
         }
+    }
+
+    /// <summary>
+    /// Tenta publicar novamente uma mensagem que falhou.
+    /// </summary>
+    /// <param name="channel">Canal utilizado pelo consumidor.</param>
+    /// <param name="delivery">Mensagem recebida.</param>
+    /// <param name="cancellationToken">Token para cancelar a operação.</param>
+    private async Task HandleRetryAsync(IChannel channel, BasicDeliverEventArgs delivery, CancellationToken cancellationToken)
+    {
+        var retryCount = 0;
+
+        if(delivery.BasicProperties.Headers is { } headers && headers.TryGetValue("x-retry-count", out var value))
+            retryCount = value is int count && count >= 0 ? count : MaxRetries;
+
+        if(retryCount >= MaxRetries)
+        {
+            _logger.LogWarning("Message {MessageId} exceeded retry limit.", delivery.BasicProperties.MessageId);
+
+            await channel.BasicRejectAsync(delivery.DeliveryTag, requeue: false, cancellationToken: cancellationToken);
+
+            return;
+        }
+
+        // Aumenta o intervalo a cada nova falha.
+        await Task.Delay(TimeSpan.FromSeconds(2 * (retryCount + 1)), cancellationToken);
+
+        var properties = new BasicProperties
+        {
+            ContentType = "application/json",
+            Persistent = true,
+            MessageId = delivery.BasicProperties.MessageId,
+            CorrelationId = delivery.BasicProperties.CorrelationId,
+            Type = delivery.BasicProperties.Type,
+
+            Headers = new Dictionary<string, object?>
+            {
+                ["x-retry-count"] = retryCount + 1
+            }
+        };
+
+        await channel.BasicPublishAsync(
+            exchange: string.Empty,
+            routingKey: _settings.QueueName,
+            mandatory: true,
+            basicProperties: properties,
+            body: delivery.Body.ToArray(),
+            cancellationToken: cancellationToken);
+
+        // Só confirma a original após a nova publicação.
+        await channel.BasicAckAsync(
+            delivery.DeliveryTag,
+            multiple: false,
+            cancellationToken: cancellationToken);
     }
 }

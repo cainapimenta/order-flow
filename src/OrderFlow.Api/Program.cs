@@ -4,6 +4,10 @@ using OrderFlow.Application.Orders;
 using OrderFlow.Infrastructure.Persistence;
 using OrderFlow.Infrastructure.Persistence.Repositories;
 using OrderFlow.Infrastructure.Persistence.Outbox;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using OrderFlow.Api.HealthChecks;
+using OrderFlow.Infrastructure.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +29,19 @@ builder.Services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<
 
 // Registra o serviço responsável pelos pedidos.
 builder.Services.AddScoped<OrderService>();
+
+// Obtém as configurações do RabbitMQ.
+var rabbitMqSettings = builder.Configuration
+    .GetSection("RabbitMq")
+    .Get<RabbitMqSettings>() ?? throw new InvalidOperationException("RabbitMQ settings not found.");
+
+builder.Services.AddSingleton(rabbitMqSettings);
+
+// Registra os Health Checks.
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
+    .AddCheck<PostgreSqlHealthCheck>("postgres", tags: ["ready"], timeout: TimeSpan.FromSeconds(5))
+    .AddCheck<RabbitMqHealthCheck>("rabbitmq", tags: ["ready"], timeout: TimeSpan.FromSeconds(5));
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -50,5 +67,19 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Verifica se a API está respondendo.
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = registration =>
+        registration.Tags.Contains("live")
+});
+
+// Verifica as dependências da aplicação.
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = registration =>
+        registration.Tags.Contains("ready")
+});
 
 app.Run();

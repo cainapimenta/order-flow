@@ -29,6 +29,11 @@ public class OrderFlowDbContext : DbContext, IUnitOfWork
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
     /// <summary>
+    /// Histórico de mudanças de status dos pedidos.
+    /// </summary>
+    public DbSet<OrderStatusHistory> OrderStatusHistory => Set<OrderStatusHistory>();
+
+    /// <summary>
     /// Mensagens registradas para publicação.
     /// </summary>
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();

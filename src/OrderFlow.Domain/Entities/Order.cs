@@ -8,6 +8,7 @@ namespace OrderFlow.Domain.Entities;
 public class Order
 {
     private readonly List<OrderItem> _items = [];
+    private readonly List<OrderStatusHistory> _statusHistory = [];
 
     /// <summary>
     /// ID do pedido.
@@ -29,6 +30,10 @@ public class Order
     /// Itens que fazem parte do pedido.
     /// </summary>
     public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
+    /// <summary>
+    /// Histórico de status do pedido.
+    /// </summary>
+    public IReadOnlyCollection<OrderStatusHistory> StatusHistory => _statusHistory.AsReadOnly();
     /// <summary>
     /// Soma dos valores de todos os itens.
     /// </summary>
@@ -53,6 +58,8 @@ public class Order
         Status = OrderStatus.Pending;
         CreatedAt = DateTime.UtcNow;
         _items = [];
+
+        _statusHistory.Add(new OrderStatusHistory(Status, CreatedAt));
     }
 
     /// <summary>
@@ -80,6 +87,8 @@ public class Order
             throw new InvalidOperationException("An order must contain at least one item.");
 
         Status = OrderStatus.Processing;
+
+        _statusHistory.Add(new OrderStatusHistory(Status, DateTime.UtcNow));
     }
 
     /// <summary>
@@ -91,5 +100,7 @@ public class Order
             throw new InvalidOperationException("Only processing orders can be finished.");
 
         Status = OrderStatus.Finished;
+
+        _statusHistory.Add(new OrderStatusHistory(Status, DateTime.UtcNow));
     }   
 }

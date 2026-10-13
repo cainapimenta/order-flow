@@ -1,0 +1,57 @@
+{
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "queues": [
+    {
+      "name": "order-created",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "order-created-dead",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "order-flow.dlx",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "order-flow.dlx",
+      "vhost": "/",
+      "destination": "order-created-dead",
+      "destination_type": "queue",
+      "routing_key": "order-created-dead",
+      "arguments": {}
+    }
+  ],
+  "policies": [
+    {
+      "vhost": "/",
+      "name": "order-created-dlx",
+      "pattern": "^order-created$",
+      "apply-to": "queues",
+      "definition": {
+        "dead-letter-exchange": "order-flow.dlx",
+        "dead-letter-routing-key": "order-created-dead"
+      },
+      "priority": 0
+    }
+  ]
+}

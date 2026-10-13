@@ -40,6 +40,7 @@ public class OrderRepository : IOrderRepository
     {
         return await _context.Orders
             .Include(order => order.Items)
+            .Include(order => order.StatusHistory)
             .FirstOrDefaultAsync(
                 order => order.Id == id,
                 cancellationToken);
@@ -55,6 +56,8 @@ public class OrderRepository : IOrderRepository
         return await _context.Orders
             .AsNoTracking()
             .Include(order => order.Items)
+            .Include(order => order.StatusHistory)
+            .AsSplitQuery()
             .OrderByDescending(order => order.CreatedAt)
             .ToListAsync(cancellationToken);
     }

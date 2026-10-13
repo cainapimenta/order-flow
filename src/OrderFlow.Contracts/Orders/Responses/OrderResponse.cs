@@ -34,4 +34,9 @@ public class OrderResponse
     /// Itens do pedido.
     /// </summary>
     public IReadOnlyList<OrderItemResponse> Items { get; init; } = [];
+
+    /// <summary>
+    /// Histórico de status do pedido.
+    /// </summary>
+    public IReadOnlyList<OrderStatusHistoryResponse> StatusHistory { get; init; } = [];
 }

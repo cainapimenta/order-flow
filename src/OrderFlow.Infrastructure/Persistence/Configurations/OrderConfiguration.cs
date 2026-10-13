@@ -44,9 +44,23 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasForeignKey(i => i.OrderId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Configura o relacionamento com o histórico de status.
+        builder.HasMany(order => order.StatusHistory)
+            .WithOne()
+            .HasForeignKey(history => history.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.Navigation(x => x.Items)
             .HasField("_items")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
+        // Permite que o EF Core acesse a coleção privada.
+        builder.Navigation(order => order.StatusHistory)
+            .HasField("_statusHistory")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        // Utiliza a versão do registro para detectar alterações concorrentes.
+        builder.Property<uint>("xmin")
+            .IsRowVersion();
     }
 }

@@ -69,6 +69,35 @@ services:
       retries: 10
       start_period: 20s
 
+  rabbitmq-init:
+    image: curlimages/curl:8.12.1
+    container_name: order-flow-rabbitmq-init
+    restart: "no"
+
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+    environment:
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+
+    volumes:
+      - ./infra/rabbitmq/definitions.json:/definitions.json:ro
+
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        curl --fail-with-body --silent --show-error \
+          --retry 15 \
+          --retry-delay 2 \
+          --retry-connrefused \
+          --user "$$RABBITMQ_USER:$$RABBITMQ_PASSWORD" \
+          --header "Content-Type: application/json" \
+          --data-binary @/definitions.json \
+          http://rabbitmq:15672/api/definitions
+
 volumes:
   postgres_data:
   pgadmin_data:

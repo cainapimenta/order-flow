@@ -45,6 +45,12 @@ namespace OrderFlow.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("status");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.ToTable("orders", (string)null);
@@ -83,6 +89,35 @@ namespace OrderFlow.Infrastructure.Persistence.Migrations
                     b.HasIndex("OrderId");
 
                     b.ToTable("order_items", (string)null);
+                });
+
+            modelBuilder.Entity("OrderFlow.Domain.Entities.OrderStatusHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("changed_at");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("integer")
+                        .HasColumnName("order_id");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId", "ChangedAt")
+                        .HasDatabaseName("ix_order_status_history_order_id_changed_at");
+
+                    b.ToTable("order_status_history", (string)null);
                 });
 
             modelBuilder.Entity("OrderFlow.Infrastructure.Persistence.Entities.OutboxMessage", b =>
@@ -145,6 +180,15 @@ namespace OrderFlow.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("OrderFlow.Domain.Entities.OrderStatusHistory", b =>
+                {
+                    b.HasOne("OrderFlow.Domain.Entities.Order", null)
+                        .WithMany("StatusHistory")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("OrderFlow.Infrastructure.Persistence.Entities.OutboxMessage", b =>
                 {
                     b.HasOne("OrderFlow.Domain.Entities.Order", null)
@@ -157,6 +201,8 @@ namespace OrderFlow.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("OrderFlow.Domain.Entities.Order", b =>
                 {
                     b.Navigation("Items");
+
+                    b.Navigation("StatusHistory");
                 });
 #pragma warning restore 612, 618
         }
